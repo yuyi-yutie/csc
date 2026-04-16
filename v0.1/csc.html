@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Game</title>
+  <script src="pieces_config.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -166,11 +167,7 @@
   var cellStates = new Array(25).fill(null);
   [11,12,13].forEach(function(i){ cellStates[i]={type:'obstacle'}; });
 
-  var pieces = [].concat(
-    NAMES.map(function(n,i){ return{id:i,  name:n,color:RED,  boardIndex:i,   pendingIndex:null,hp:MAX_HP,ep:MAX_EP}; }),
-    NAMES.map(function(n,i){ return{id:i+5,name:n,color:GREEN,boardIndex:20+i,pendingIndex:null,hp:MAX_HP,ep:MAX_EP}; })
-  );
-
+  var pieces = [];
   var moveQueue={red:[],green:[]}, actionQueue={red:[],green:[]};
   var usedProjectileIds=new Set();
   var selected=null, isExecuting=false, turnNumber=1;
@@ -182,6 +179,47 @@
   var panelAlly  = document.getElementById('panel-ally');
   var ctxMenu    = document.getElementById('ctx-menu');
   var ctxMoveGrp = document.getElementById('ctx-move-group');
+
+  // 加载棋子配置
+  function loadPiecesConfig() {
+    console.log('Loading pieces config...');
+    
+    // 检查外部JS文件是否已加载
+    if (typeof piecesConfig !== 'undefined' && piecesConfig.pieces) {
+      console.log('Successfully loaded config from JS file:', piecesConfig);
+      initializePieces(piecesConfig.pieces);
+      render();
+    } else {
+      console.error('Config not found, using default');
+      // 如果外部配置未加载，使用默认配置
+      initializePiecesWithDefault();
+      render();
+    }
+  }
+
+  // 根据配置初始化棋子
+  function initializePieces(configPieces) {
+    pieces = configPieces.map(function(p, i) {
+      var boardIndex = p.color === RED ? i : 20 + (i - 5);
+      return {
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        boardIndex: boardIndex,
+        pendingIndex: null,
+        hp: MAX_HP,
+        ep: MAX_EP
+      };
+    });
+  }
+
+  // 使用默认配置初始化棋子
+  function initializePiecesWithDefault() {
+    pieces = [].concat(
+      NAMES.map(function(n,i){ return{id:i,  name:n,color:RED,  boardIndex:i,   pendingIndex:null,hp:MAX_HP,ep:MAX_EP}; }),
+      NAMES.map(function(n,i){ return{id:i+5,name:n,color:GREEN,boardIndex:20+i,pendingIndex:null,hp:MAX_HP,ep:MAX_EP}; })
+    );
+  }
 
   function getCellsBetween(fromIdx,toIdx){
     var r1=Math.floor(fromIdx/5),c1=fromIdx%5,r2=Math.floor(toIdx/5),c2=toIdx%5;
@@ -546,7 +584,7 @@
     if(pressRingEl){ pressRingEl.remove(); pressRingEl=null; pressRingCell=null; }
   }
 
-  render();
+  loadPiecesConfig();
 </script>
 </body>
 </html>
