@@ -2,7 +2,7 @@
 
 本人于2026.4.15开始制作的纯AI机打html小游戏，会放到个人博客的static目录下
 
-可以通过访问**yuyi.online/csc.html**体验
+可以通过访问[**yuyi.online/csc.html**](yuyi.online/csc.html)体验
 
 ## v0.1
 
