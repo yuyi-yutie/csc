@@ -2,7 +2,11 @@
 
 本人于2026.4.15开始制作的纯AI机打html小游戏，会放到0verDay网站的game目录下
 
-可以通过访问[**0verDay.github.io/game/csc.html**](0verDay.github.io/game/csc.html)体验
+可以通过访问下方链接游玩
+
+```
+0verDay.github.io/game/csc.html
+```
 
 ## dev0.1
 
