@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Game</title>
-  <script src="pieces_config.js"></script>
+  <script src="pieces_config/pieces_config.js"></script>
+  <script src="weapons_config/weapons.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -49,20 +50,109 @@
     .ctx-item.has-sub:hover > .ctx-submenu { display: block; }
     .ctx-submenu .ctx-item.no-los  { opacity: 0.32; pointer-events: none; }
     .ctx-submenu .ctx-item.no-ammo { opacity: 0.32; pointer-events: none; }
-    .side-panel { display: flex; flex-direction: column; gap: 12px; width: 200px; }
+    .side-panel { display: flex; flex-direction: column; gap: 12px; width: 320px; }
     .hp-card {
       background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 10px; padding: 9px 11px;
       display: flex; flex-direction: column; gap: 6px;
       backdrop-filter: blur(6px);
       transition: opacity 0.3s, box-shadow 0.2s, border-color 0.2s;
+      width: 200px;
     }
     .side-panel.enemy .hp-card { border-color: rgba(255,80,80,0.25);  box-shadow: 0 0 10px rgba(255,60,60,0.08); }
     .side-panel.ally  .hp-card { border-color: rgba(40,220,120,0.25); box-shadow: 0 0 10px rgba(40,220,120,0.08); }
     .hp-card.committed { opacity: 0.48; }
-    .hp-card.dead { opacity: 0.3; filter: grayscale(100%); }
+    .card-side-panel.committed { opacity: 0.48; }
+    .hp-card.dead { opacity: 0.3 !important; filter: grayscale(100%); }
+    .card-side-panel.dead { opacity: 0 !important; filter: grayscale(100%); pointer-events: none !important; display: none; }
+    .hp-card.dead.hovered { opacity: 0.3 !important; filter: grayscale(100%); box-shadow: none !important; }
+    .card-side-panel.dead.hovered { opacity: 0 !important; filter: grayscale(100%); display: none; }
     .side-panel.enemy .hp-card.hovered { border-color: rgba(255,120,120,0.75) !important; box-shadow: 0 0 18px 4px rgba(255,80,80,0.35) !important; }
     .side-panel.ally  .hp-card.hovered { border-color: rgba(60,220,140,0.75)  !important; box-shadow: 0 0 18px 4px rgba(40,220,120,0.35) !important; }
+    .card-wrapper {
+      position: relative;
+      display: flex;
+      width: 320px;
+    }
+    .side-panel.enemy .card-wrapper {
+      flex-direction: row-reverse;
+    }
+    .hp-card {
+      flex-shrink: 0;
+      z-index: 2;
+    }
+    .card-side-panel {
+      position: absolute;
+      top: 0;
+      width: 120px;
+      height: 100%;
+      background: rgba(30,32,60,0.95);
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      opacity: 1;
+      pointer-events: auto;
+      transition: transform 0.25s ease;
+      z-index: 1;
+      padding: 10px;
+    }
+    .weapon-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .weapon-image-slot {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .weapon-image-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .weapon-name-slot {
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .side-panel.ally .weapon-container {
+      flex-direction: row-reverse;
+    }
+    .side-panel.enemy .card-side-panel {
+      left: 0;
+      border: 1px solid rgba(255,80,80,0.3);
+    }
+    .side-panel.ally .card-side-panel {
+      right: 0;
+      border: 1px solid rgba(40,220,120,0.3);
+    }
+    .side-panel.enemy .card-side-panel {
+      transform: translateX(60px);
+      transition: transform 0.25s ease;
+    }
+    .side-panel.ally .card-side-panel {
+      transform: translateX(-60px);
+      transition: transform 0.25s ease;
+    }
+    .card-side-panel.expanded {
+      transition: transform 0.25s ease !important;
+    }
+    .side-panel.enemy .card-side-panel.expanded {
+      transform: translateX(0) !important;
+    }
+    .side-panel.ally .card-side-panel.expanded {
+      transform: translateX(0) !important;
+    }
+    .side-panel.enemy .card-wrapper:hover .card-side-panel {
+      /* 由JavaScript控制 */
+    }
+    .side-panel.ally .card-wrapper:hover .card-side-panel {
+      /* 由JavaScript控制 */
+    }
     .hp-card-header { display: flex; align-items: center; gap: 7px; margin-bottom: 1px; }
     .card-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .side-panel.enemy .card-dot { background: radial-gradient(circle at 35% 35%,#ff8a80,#c0392b); box-shadow: 0 0 5px rgba(255,60,60,.7); }
@@ -216,7 +306,8 @@
         ep: MAX_EP,
         money: 800,
         reaction: p.reaction !== undefined ? p.reaction : 50,
-        shooting: p.shooting !== undefined ? p.shooting : 50
+        shooting: p.shooting !== undefined ? p.shooting : 50,
+        currentWeapon: p.color === RED ? WEAPON.USP : WEAPON.GLOCK
       };
     });
   }
@@ -224,8 +315,8 @@
   // 使用默认配置初始化棋子
   function initializePiecesWithDefault() {
     pieces = [].concat(
-      NAMES.map(function(n,i){ return{id:i,  name:n,color:RED,  boardIndex:i,   pendingIndex:null,hp:MAX_HP,ep:MAX_EP,money:800,reaction:50,shooting:50}; }),
-      NAMES.map(function(n,i){ return{id:i+5,name:n,color:GREEN,boardIndex:20+i,pendingIndex:null,hp:MAX_HP,ep:MAX_EP,money:800,reaction:50,shooting:50}; })
+      NAMES.map(function(n,i){ return{id:i,  name:n,color:RED,  boardIndex:i,   pendingIndex:null,hp:MAX_HP,ep:MAX_EP,money:800,reaction:50,shooting:50,currentWeapon:WEAPON.USP}; }),
+      NAMES.map(function(n,i){ return{id:i+5,name:n,color:GREEN,boardIndex:20+i,pendingIndex:null,hp:MAX_HP,ep:MAX_EP,money:800,reaction:50,shooting:50,currentWeapon:WEAPON.GLOCK}; })
     );
   }
 
@@ -274,9 +365,13 @@
     list.forEach(function(p){
       var pct=Math.max(0,(p.hp/MAX_HP)*100);
       var isSel=selected&&selected.piece===p;
-      var isHov=hoveredPieceId===p.id;
+      var isHovered=hoveredPieceId===p.id;
+      var wrapper=document.createElement('div');
+      wrapper.className='card-wrapper';
+      
       var card=document.createElement('div');
-      card.className='hp-card'+(hasPending(p)?' committed':'')+(isHov?' hovered':'')+(p.dead?' dead':'');
+      card.className='hp-card'+(hasPending(p)?' committed':'')+(p.dead?' dead':'')+(isHovered?' hovered':'');
+      card.dataset.pieceId = p.id;
       if(isSel) card.style.outline=side==='enemy'?'2px solid rgba(255,100,100,.6)':'2px solid rgba(60,220,130,.6)';
       var epBoxes='';
       for(var i=0;i<MAX_EP;i++) epBoxes+='<div class="ep-box '+(i<p.ep?'filled':'empty')+'"></div>';
@@ -307,7 +402,83 @@
             '</div>'+ 
           '</div>'+
         '</div>';
-      el.appendChild(card);
+      
+      var sidePanel=document.createElement('div');
+      var panelClass='card-side-panel';
+      if(p.dead) panelClass+=' dead';
+      if(hasPending(p)) panelClass+=' committed';
+      sidePanel.className=panelClass;
+      
+      // 从weapons.js读取武器数据
+      var currentWeaponName = p.currentWeapon || (p.color === RED ? WEAPON.USP : WEAPON.GLOCK);
+      var currentWeapon = weaponsData.weapons.find(w => w.name === currentWeaponName);
+      
+      // 创建武器容器
+      var weaponContainer = document.createElement('div');
+      weaponContainer.className = 'weapon-container';
+      
+      // 创建武器图片插槽
+      var imageSlot = document.createElement('div');
+      imageSlot.className = 'weapon-image-slot';
+      
+      // 创建武器名字插槽
+      var nameSlot = document.createElement('div');
+      nameSlot.className = 'weapon-name-slot';
+      
+      if(currentWeapon) {
+        var weaponImg = document.createElement('img');
+        weaponImg.src = currentWeapon.imagePath;
+        imageSlot.appendChild(weaponImg);
+        nameSlot.textContent = currentWeapon.name.toUpperCase();
+      }
+      
+      weaponContainer.appendChild(imageSlot);
+      weaponContainer.appendChild(nameSlot);
+      sidePanel.appendChild(weaponContainer);
+      
+      // 根据选中状态或pending状态设置面板初始位置
+      if(isSel || hasPending(p)) {
+        sidePanel.classList.add('expanded');
+      } else {
+        sidePanel.classList.remove('expanded');
+      }
+      
+      // 添加鼠标事件
+      if(!p.dead && !hasPending(p)){
+        card.style.cursor = 'pointer';
+        
+        // 直接操作DOM，避免重新渲染整个面板
+        card.addEventListener('mouseenter',function(e){ 
+          e.stopPropagation();
+          this.classList.add('hovered');
+          var panel = this.nextElementSibling;
+          if(panel && panel.classList.contains('card-side-panel')){
+            panel.classList.add('expanded');
+          }
+        });
+        card.addEventListener('mouseleave',function(e){ 
+          e.stopPropagation();
+          this.classList.remove('hovered');
+          var panel = this.nextElementSibling;
+          if(panel && panel.classList.contains('card-side-panel')){
+            // 只有当棋子未被选中时才缩回
+            if(!(selected && selected.piece === p)){
+              panel.classList.remove('expanded');
+            }
+          }
+        });
+        card.addEventListener('click',function(e){ 
+          e.stopPropagation();
+          if(!isExecuting){ 
+            selected={piece:p};
+            render();
+          } 
+        });
+      }
+      
+      wrapper.appendChild(card);
+      wrapper.appendChild(sidePanel);
+      el.appendChild(wrapper);
     });
   }
 
@@ -350,6 +521,7 @@
           el.style.width=layout.size+'px'; el.style.height=layout.size+'px';
           el.style.fontSize=layout.fs+'px';
           el.style.transform=pieceTransform(off[0],off[1],isSel?1.22:1);
+          el.dataset.offX=off[0]; el.dataset.offY=off[1];
           el.textContent=p.name;
           if(!ghost&&!isExecuting&&!hasPending(p)&&!p.dead){
             el.addEventListener('mouseenter',function(){ hoveredPieceId=p.id; renderPanels(); });
@@ -443,11 +615,103 @@
 
   document.addEventListener('mousedown',function(e){
     if(!ctxMenu.contains(e.target)) hideCtxMenu();
-    if(e.button===0&&!e.target.closest('.cell')&&!e.target.closest('#ctx-menu')){ selected=null; render(); }
+    var clickedOnGame = e.target.closest('.cell') || e.target.closest('.hp-card') || e.target.closest('.card-wrapper') || e.target.closest('#ctx-menu') || e.target.closest('#grid');
+    if(e.button===0 && !clickedOnGame){
+      selected=null;
+      updatePanelsExpanded();
+    }
   });
+  
+  function updatePanelsExpanded(){
+    var cards = document.querySelectorAll('.hp-card');
+    cards.forEach(function(card){
+      var wrapper = card.closest('.card-wrapper');
+      if(!wrapper) return;
+      var panel = wrapper.querySelector('.card-side-panel');
+      if(!panel) return;
+      var isAlly = wrapper.closest('.side-panel.ally');
+      var side = isAlly ? 'ally' : 'enemy';
+      var pieceId = parseInt(card.dataset.pieceId);
+      var piece = pieces.find(function(p){ return p.id === pieceId; });
+      if(!piece) return;
+      var isSel = selected && selected.piece && selected.piece.id === pieceId;
+      var isCommitted = hasPending(piece);
+      
+      // 更新卡片的committed状态
+      if(isCommitted){
+        card.classList.add('committed');
+        panel.classList.add('committed');
+      } else {
+        card.classList.remove('committed');
+        panel.classList.remove('committed');
+      }
+      
+      if(isSel){
+        panel.classList.add('expanded');
+        card.style.outline = side === 'enemy' ? '2px solid rgba(255,100,100,.6)' : '2px solid rgba(60,220,130,.6)';
+      } else if(!isCommitted){
+        panel.classList.remove('expanded');
+        card.style.outline = '';
+      }
+    });
+    
+    // 更新棋子的选中状态
+    var pieceElements = document.querySelectorAll('.piece');
+    pieceElements.forEach(function(el){
+      var cell = el.closest('.cell');
+      if(!cell) return;
+      var idx = parseInt(cell.dataset.idx);
+      var piece = pieces.find(function(p){ return p.boardIndex === idx && !p.dead; });
+      if(!piece) return;
+      var isSel = selected && selected.piece && selected.piece.id === piece.id;
+      var offX = parseInt(el.dataset.offX) || 0;
+      var offY = parseInt(el.dataset.offY) || 0;
+      if(isSel){
+        el.classList.add('selected');
+        el.style.transform = pieceTransform(offX, offY, 1.22);
+      } else {
+        el.classList.remove('selected');
+        el.style.transform = pieceTransform(offX, offY, 1);
+      }
+    });
+    
+    // 更新棋盘格子的选中状态
+    var cellElements = document.querySelectorAll('.cell');
+    cellElements.forEach(function(cell){
+      var idx = parseInt(cell.dataset.idx);
+      var isSelTarget = selected && selected.piece && selected.piece.boardIndex === idx && !hasPending(selected.piece) && !selected.piece.dead;
+      if(isSelTarget){
+        cell.classList.add('drop-target');
+      } else {
+        cell.classList.remove('drop-target');
+      }
+    });
+  }
+  
+  function resetAllPanels(){
+    var panels = document.querySelectorAll('.card-side-panel');
+    panels.forEach(function(panel){
+      panel.classList.remove('expanded');
+    });
+  }
+  
   document.addEventListener('contextmenu',function(e){
     e.preventDefault();
     if(!e.target.closest('.cell')&&!isExecuting) showCtxMenu(e.clientX,e.clientY,false);
+  });
+
+  // 键盘数字键选择己方棋子
+  document.addEventListener('keydown',function(e){
+    if(isExecuting) return;
+    var keyCode=e.keyCode||e.which;
+    if(keyCode>=49&&keyCode<=53){ // 1-5
+      var index=keyCode-49; // 0-4
+      var allyPieces=pieces.filter(function(p){return p.color===GREEN&&!p.dead&&!hasPending(p);});
+      if(allyPieces[index]){
+        selected={piece:allyPieces[index]};
+        render();
+      }
+    }
   });
 
   function animateMove(p,fromIdx,toIdx){
@@ -524,6 +788,7 @@
     isExecuting=true; selected=null;
     document.body.classList.add('executing');
     updateBanner();
+    resetAllPanels();
 
     tickZones(); 
     // 检查棋子死亡
