@@ -1,6 +1,0 @@
-res://scripts/chess_piece.gd
-res://scenes/gameplay_interface.tscn
-res://scripts/gameplay_interface.gd
-res://scenes/card_ui.tscn
-res://scripts/card_ui.gd
-res://scripts/board_cell.gd
