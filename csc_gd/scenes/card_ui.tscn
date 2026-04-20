@@ -141,23 +141,3 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 2
-
-[node name="Slot1" type="ColorRect" parent="MarginContainer/VBoxContainer/WeaponRow/Throwables"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-color = Color(0.3, 0.3, 0.3, 1)
-
-[node name="Slot2" type="ColorRect" parent="MarginContainer/VBoxContainer/WeaponRow/Throwables"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-color = Color(0.3, 0.3, 0.3, 1)
-
-[node name="Slot3" type="ColorRect" parent="MarginContainer/VBoxContainer/WeaponRow/Throwables"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-color = Color(0.3, 0.3, 0.3, 1)
-
-[node name="Slot4" type="ColorRect" parent="MarginContainer/VBoxContainer/WeaponRow/Throwables"]
-custom_minimum_size = Vector2(8, 8)
-layout_mode = 2
-color = Color(0.3, 0.3, 0.3, 1)

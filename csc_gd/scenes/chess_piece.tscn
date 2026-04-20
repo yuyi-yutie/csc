@@ -2,10 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/chess_piece.gd" id="1_piece"]
 
-[node name="ChessPiece" type="ColorRect"]
+[node name="ChessPiece" type="PanelContainer"]
 custom_minimum_size = Vector2(68, 68)
 offset_right = 68.0
 offset_bottom = 68.0
 mouse_filter = 2
 script = ExtResource("1_piece")
-color = Color(1, 1, 1, 1)

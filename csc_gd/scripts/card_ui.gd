@@ -21,19 +21,40 @@ var _glow_style: StyleBoxFlat
 var _is_hovered: bool = false
 var _is_selected: bool = false
 
+static var _weapons_data: Dictionary = {}
+
+static func _load_weapons_data() -> void:
+	if not _weapons_data.is_empty():
+		return
+	var file = FileAccess.open("res://data/weapons.json", FileAccess.READ)
+	if file:
+		var json_text = file.get_as_text()
+		var json = JSON.new()
+		var error = json.parse(json_text)
+		if error == OK:
+			_weapons_data = json.data
+
 func _ready() -> void:
 	name_label.text = character_name
+	_load_weapons_data()
 	
 	var base_color = Color.WHITE
+	var weapon_id = ""
+	
 	if team == "yellow":
 		base_color = Color(1.0, 0.54, 0.45, 1.0)
-		weapon_icon.texture = load("res://assets/glock.png")
-		weapon_name.text = "Glock"
+		weapon_id = "glock"
 	elif team == "blue":
 		base_color = Color(0.5, 1.0, 0.72, 1.0)
-		weapon_icon.texture = load("res://assets/usp.png")
-		weapon_name.text = "USP"
+		weapon_id = "usp"
 		
+	if _weapons_data.has(weapon_id):
+		var w_data = _weapons_data[weapon_id]
+		weapon_name.text = w_data.get("name", "")
+		var icon_path = w_data.get("icon_path", "")
+		if icon_path != "":
+			weapon_icon.texture = load(icon_path)
+			
 	team_dot.color = base_color
 	
 	var style_box = StyleBoxFlat.new()

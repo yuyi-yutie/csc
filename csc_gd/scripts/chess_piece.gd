@@ -1,4 +1,4 @@
-extends ColorRect
+extends PanelContainer
 class_name ChessPiece
 
 const TEAM_TOP := "yellow"
@@ -14,35 +14,43 @@ signal piece_clicked(piece: ChessPiece)
 var _is_hovered: bool = false
 var _is_selected: bool = false
 
+var _normal_style: StyleBoxFlat
+var _glow_style: StyleBoxFlat
+
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	gui_input.connect(_on_gui_input)
+	_setup_styles()
 	_apply_visual_state()
+
+func _setup_styles() -> void:
+	_normal_style = StyleBoxFlat.new()
+	_normal_style.bg_color = _get_team_base_color()
+	
+	_glow_style = _normal_style.duplicate()
+	_glow_style.border_color = _get_border_color()
+	_glow_style.border_width_left = 1
+	_glow_style.border_width_top = 1
+	_glow_style.border_width_right = 1
+	_glow_style.border_width_bottom = 1
+	_glow_style.shadow_color = _get_glow_color()
+	_glow_style.shadow_size = 18
 
 func set_glow(active: bool) -> void:
 	_is_hovered = active
-	queue_redraw()
+	_update_glow_state()
 
 func set_selected(active: bool) -> void:
 	_is_selected = active
-	queue_redraw()
+	_update_glow_state()
 
-func _draw() -> void:
-	if not _is_hovered and not _is_selected:
-		return
-
-	var glow_color := _get_glow_color()
-	var border_color := _get_border_color()
-	
-	# Simulate box-shadow: 0 0 18px 4px
-	draw_rect(Rect2(Vector2(-12.0, -12.0), size + Vector2(24.0, 24.0)), Color(glow_color.r, glow_color.g, glow_color.b, glow_color.a * 0.2), false, 8.0)
-	draw_rect(Rect2(Vector2(-6.0, -6.0), size + Vector2(12.0, 12.0)), Color(glow_color.r, glow_color.g, glow_color.b, glow_color.a * 0.5), false, 6.0)
-	draw_rect(Rect2(Vector2(-2.0, -2.0), size + Vector2(4.0, 4.0)), Color(glow_color.r, glow_color.g, glow_color.b, glow_color.a), false, 4.0)
-	
-	# Simulate border-color
-	draw_rect(Rect2(Vector2.ZERO, size), border_color, false, 1.0)
+func _update_glow_state() -> void:
+	if (_is_hovered or _is_selected) and _glow_style:
+		add_theme_stylebox_override("panel", _glow_style)
+	elif _normal_style:
+		add_theme_stylebox_override("panel", _normal_style)
 
 func _on_mouse_entered() -> void:
 	piece_hovered.emit(self)
@@ -58,7 +66,7 @@ func _on_gui_input(event: InputEvent) -> void:
 		piece_clicked.emit(self)
 
 func _apply_visual_state() -> void:
-	color = _get_team_base_color()
+	_update_glow_state()
 
 func _get_team_base_color() -> Color:
 	if team == TEAM_TOP:

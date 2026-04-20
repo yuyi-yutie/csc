@@ -1,0 +1,10 @@
+{
+  "glock": {
+	"name": "Glock",
+	"icon_path": "res://assets/glock.png"
+  },
+  "usp": {
+	"name": "USP-S",
+	"icon_path": "res://assets/usp.png"
+  }
+}
