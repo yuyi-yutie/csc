@@ -4,7 +4,7 @@
 	"icon_path": "res://assets/glock.png"
   },
   "usp": {
-	"name": "USP-S",
+	"name": "USP",
 	"icon_path": "res://assets/usp.png"
   }
 }

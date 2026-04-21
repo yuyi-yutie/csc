@@ -14,16 +14,37 @@ signal piece_clicked(piece: ChessPiece)
 var _is_hovered: bool = false
 var _is_selected: bool = false
 
+var name_str: String = "":
+	set(value):
+		name_str = value
+		if is_node_ready() and has_node("NameLabel"):
+			$NameLabel.text = value
+
+var hp: int = 100
+var max_hp: int = 100
+
+var max_ep: int = 5
+var shoot: int = 50
+var react: int = 50
+signal hp_changed(new_hp: int, max_hp: int)
+signal stats_changed(piece: ChessPiece)
+
 var _normal_style: StyleBoxFlat
 var _glow_style: StyleBoxFlat
 
 func _ready() -> void:
+	randomize()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	z_index = 10  # 确保棋子永远渲染在格子之上
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	gui_input.connect(_on_gui_input)
 	_setup_styles()
 	_apply_visual_state()
+	
+	if has_node("NameLabel"):
+		$NameLabel.text = name_str
+		$NameLabel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _setup_styles() -> void:
 	_normal_style = StyleBoxFlat.new()
@@ -68,23 +89,34 @@ func _on_gui_input(event: InputEvent) -> void:
 func _apply_visual_state() -> void:
 	_update_glow_state()
 
+signal piece_died(piece: ChessPiece)
+
+func take_damage(amount: int) -> void:
+	if hp <= 0: return
+	hp -= amount
+	if hp < 0:
+		hp = 0
+	hp_changed.emit(hp, max_hp)
+	if hp == 0:
+		piece_died.emit(self)
+
 func _get_team_base_color() -> Color:
 	if team == TEAM_TOP:
-		return Color(1.0, 0.54, 0.45, 1.0)
+		return Color(1.0, 0.8, 0.2, 1.0)
 	if team == TEAM_BOTTOM:
-		return Color(0.5, 1.0, 0.72, 1.0)
+		return Color(0.2, 0.6, 1.0, 1.0)
 	return Color.WHITE
 
 func _get_glow_color() -> Color:
 	if team == TEAM_TOP:
-		return Color(1.0, 80.0 / 255.0, 80.0 / 255.0, 0.35)
+		return Color(1.0, 0.9, 0.2, 0.35)
 	if team == TEAM_BOTTOM:
-		return Color(40.0 / 255.0, 220.0 / 255.0, 120.0 / 255.0, 0.35)
+		return Color(0.2, 0.6, 1.0, 0.35)
 	return Color(1.0, 1.0, 1.0, 0.35)
 
 func _get_border_color() -> Color:
 	if team == TEAM_TOP:
-		return Color(1.0, 120.0 / 255.0, 120.0 / 255.0, 0.75)
+		return Color(1.0, 0.95, 0.4, 0.75)
 	if team == TEAM_BOTTOM:
-		return Color(60.0 / 255.0, 220.0 / 255.0, 140.0 / 255.0, 0.75)
+		return Color(0.4, 0.75, 1.0, 0.75)
 	return Color(1.0, 1.0, 1.0, 0.75)

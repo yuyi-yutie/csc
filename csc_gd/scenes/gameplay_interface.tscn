@@ -14,6 +14,32 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
+[node name="TurnPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="TurnPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="TurnLabel" type="Label" parent="TurnPanel/MarginContainer"]
+layout_mode = 2
+text = "回合 1：行动 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="BoardContainer" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 8
@@ -135,6 +161,7 @@ offset_top = 192.0
 offset_right = 192.0
 offset_bottom = 288.0
 grid_position = Vector2i(1, 2)
+is_obstacle = true
 
 [node name="BoardCell_2_2" parent="BoardContainer" instance=ExtResource("1_board_cell")]
 offset_left = 192.0
@@ -142,6 +169,7 @@ offset_top = 192.0
 offset_right = 288.0
 offset_bottom = 288.0
 grid_position = Vector2i(2, 2)
+is_obstacle = true
 
 [node name="BoardCell_3_2" parent="BoardContainer" instance=ExtResource("1_board_cell")]
 offset_left = 288.0
@@ -149,6 +177,7 @@ offset_top = 192.0
 offset_right = 384.0
 offset_bottom = 288.0
 grid_position = Vector2i(3, 2)
+is_obstacle = true
 
 [node name="BoardCell_4_2" parent="BoardContainer" instance=ExtResource("1_board_cell")]
 offset_left = 384.0

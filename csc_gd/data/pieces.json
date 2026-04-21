@@ -1,0 +1,16 @@
+{
+  "yellow": [
+	{ "name": "甲", "max_hp": 100, "max_ep": 5, "shoot": 80, "react": 75 },
+	{ "name": "乙", "max_hp": 120, "max_ep": 4, "shoot": 70, "react": 65 },
+	{ "name": "丙", "max_hp": 90, "max_ep": 6, "shoot": 85, "react": 80 },
+	{ "name": "丁", "max_hp": 110, "max_ep": 5, "shoot": 75, "react": 70 },
+	{ "name": "戊", "max_hp": 100, "max_ep": 5, "shoot": 60, "react": 85 }
+  ],
+  "blue": [
+	{ "name": "甲", "max_hp": 110, "max_ep": 5, "shoot": 75, "react": 70 },
+	{ "name": "乙", "max_hp": 100, "max_ep": 6, "shoot": 85, "react": 80 },
+	{ "name": "丙", "max_hp": 130, "max_ep": 4, "shoot": 65, "react": 60 },
+	{ "name": "丁", "max_hp": 95, "max_ep": 5, "shoot": 90, "react": 85 },
+	{ "name": "戊", "max_hp": 105, "max_ep": 5, "shoot": 70, "react": 75 }
+  ]
+}
