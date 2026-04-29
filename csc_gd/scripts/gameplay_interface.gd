@@ -18,6 +18,21 @@ var _target_cell: BoardCell = null
 
 var _buy_menu_overlay: ColorRect
 
+var _shop_buttons: Array = [[], [], []]
+var _weapons_data: Dictionary = {}
+
+const SHOP_YELLOW = [
+	["glock", "tec-9", "cz75", "deagle"],
+	["mac-10", "pp-19", "nova", "xm1014"],
+	["galil ar", "ak47", "ssg08", "awp"]
+]
+
+const SHOP_BLUE = [
+	["usp-s", "fn57", "cz75", "deagle"],
+	["mp9", "pp-19", "nova", "xm1014"],
+	["m4a1-s", "m4a4", "ssg08", "awp"]
+]
+
 var piece_ghosts: Dictionary = {}
 var piece_targets: Dictionary = {}
 var piece_deployments: Dictionary = {}
@@ -62,7 +77,7 @@ func _ready() -> void:
 	_buy_menu_overlay.hide()
 	_buy_menu_overlay.gui_input.connect(func(e):
 		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed:
-			_buy_menu_overlay.hide()
+			_close_shop()
 	)
 	add_child(_buy_menu_overlay)
 	
@@ -72,7 +87,7 @@ func _ready() -> void:
 	_buy_menu_overlay.add_child(center_container)
 	
 	var buy_panel = PanelContainer.new()
-	buy_panel.custom_minimum_size = Vector2(480, 360)
+	buy_panel.custom_minimum_size = Vector2(640, 420)
 	buy_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var panel_style = StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.12, 0.13, 0.15, 0.95)
@@ -89,6 +104,97 @@ func _ready() -> void:
 	panel_style.shadow_size = 20
 	buy_panel.add_theme_stylebox_override("panel", panel_style)
 	
+	var buy_margin = MarginContainer.new()
+	buy_margin.add_theme_constant_override("margin_left", 20)
+	buy_margin.add_theme_constant_override("margin_top", 20)
+	buy_margin.add_theme_constant_override("margin_right", 20)
+	buy_margin.add_theme_constant_override("margin_bottom", 20)
+	buy_panel.add_child(buy_margin)
+	
+	var w_file = FileAccess.open("res://data/weapons.json", FileAccess.READ)
+	if w_file:
+		var json = JSON.new()
+		if json.parse(w_file.get_as_text()) == OK:
+			_weapons_data = json.data
+	
+	var columns_hbox = HBoxContainer.new()
+	columns_hbox.add_theme_constant_override("separation", 16)
+	buy_margin.add_child(columns_hbox)
+	
+	for i in range(4):
+		var col_vbox = VBoxContainer.new()
+		col_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col_vbox.add_theme_constant_override("separation", 12)
+		columns_hbox.add_child(col_vbox)
+		
+		var title_label = Label.new()
+		var col_titles = ["小型", "中型", "大型", "道具"]
+		title_label.text = col_titles[i]
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col_vbox.add_child(title_label)
+		
+		if i < 3:
+			for j in range(4):
+				var btn = Button.new()
+				btn.text = "..."
+				btn.custom_minimum_size = Vector2(0, 40)
+				btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
+				
+				var center = CenterContainer.new()
+				center.name = "IconCenter"
+				center.set_anchors_preset(Control.PRESET_FULL_RECT)
+				center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				btn.add_child(center)
+				
+				var icon_rect = TextureRect.new()
+				icon_rect.name = "WeaponIcon"
+				icon_rect.custom_minimum_size = Vector2(60, 30)
+				icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				center.add_child(icon_rect)
+				
+				var name_lbl = Label.new()
+				name_lbl.name = "NameLabel"
+				name_lbl.add_theme_font_size_override("font_size", 10)
+				name_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+				name_lbl.set_anchors_preset(Control.PRESET_TOP_LEFT)
+				name_lbl.offset_left = 6
+				name_lbl.offset_top = 2
+				name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				btn.add_child(name_lbl)
+				
+				var price_lbl = Label.new()
+				price_lbl.name = "PriceLabel"
+				price_lbl.add_theme_font_size_override("font_size", 10)
+				price_lbl.add_theme_color_override("font_color", Color(0.6, 0.9, 0.6))
+				price_lbl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+				price_lbl.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+				price_lbl.grow_vertical = Control.GROW_DIRECTION_BEGIN
+				price_lbl.offset_right = -6
+				price_lbl.offset_bottom = -2
+				price_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				btn.add_child(price_lbl)
+				
+				_shop_buttons[i].append(btn)
+				col_vbox.add_child(btn)
+		else:
+			for j in range(4):
+				var btn = Button.new()
+				btn.text = "小按钮"
+				btn.custom_minimum_size = Vector2(0, 30)
+				col_vbox.add_child(btn)
+				
+			var spacer = Control.new()
+			spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			col_vbox.add_child(spacer)
+			
+			var close_btn = Button.new()
+			close_btn.text = "关闭商店"
+			close_btn.custom_minimum_size = Vector2(0, 60)
+			close_btn.pressed.connect(_close_shop)
+			col_vbox.add_child(close_btn)
+			
 	center_container.add_child(buy_panel)
 	
 	_gather_nodes()
@@ -173,9 +279,11 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_B and event.pressed and not event.echo:
 		if current_action == 1 and not _is_executing_actions:
-			_buy_menu_overlay.visible = not _buy_menu_overlay.visible
-			if _buy_menu_overlay.visible and _cell_menu.visible:
-				_cell_menu.hide()
+			if not _buy_menu_overlay.visible:
+				if _selected_piece != null:
+					_open_shop()
+			else:
+				_close_shop()
 		return
 		
 	if _buy_menu_overlay != null and _buy_menu_overlay.visible:
@@ -184,6 +292,57 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _is_executing_actions: return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_show_empty_menu()
+
+func _open_shop() -> void:
+	if _selected_piece == null: return
+	_buy_menu_overlay.show()
+	if _cell_menu.visible: _cell_menu.hide()
+	
+	var team = _selected_piece.team
+	
+	var shop_weapons = SHOP_YELLOW if team == "yellow" else SHOP_BLUE
+	for i in range(3):
+		for j in range(4):
+			var w_key = shop_weapons[i][j]
+			var btn = _shop_buttons[i][j]
+			var icon_rect = btn.get_node_or_null("IconCenter/WeaponIcon")
+			var name_lbl = btn.get_node_or_null("NameLabel")
+			var price_lbl = btn.get_node_or_null("PriceLabel")
+			
+			btn.text = ""
+			
+			if _weapons_data.has(w_key):
+				var w_data = _weapons_data[w_key]
+				if name_lbl: name_lbl.text = w_data.get("name", "")
+				if price_lbl: price_lbl.text = "$ 800"
+				
+				var icon_path = w_data.get("icon_path", "")
+				if icon_path != "" and icon_rect != null:
+					icon_rect.texture = load(icon_path)
+			else:
+				if name_lbl: name_lbl.text = w_key
+				if price_lbl: price_lbl.text = "$ 800"
+				if icon_rect != null: icon_rect.texture = null
+	
+	if team == "yellow":
+		$LeftPanel.z_index = 101
+		move_child($LeftPanel, -1)
+		for card in yellow_cards:
+			card.set_shop_highlight(false)
+	elif team == "blue":
+		$RightPanel.z_index = 101
+		move_child($RightPanel, -1)
+		for card in blue_cards:
+			card.set_shop_highlight(false)
+
+func _close_shop() -> void:
+	_buy_menu_overlay.hide()
+	$LeftPanel.z_index = 0
+	$RightPanel.z_index = 0
+	for card in yellow_cards:
+		card.set_shop_highlight(false)
+	for card in blue_cards:
+		card.set_shop_highlight(false)
 
 func _show_empty_menu() -> void:
 	if _is_executing_actions: return
@@ -212,6 +371,9 @@ func _select_pair(piece: ChessPiece, card: CardUI) -> void:
 		_selected_piece.set_selected(true)
 	if _selected_card:
 		_selected_card.set_selected(true)
+		
+	if _buy_menu_overlay != null and _buy_menu_overlay.visible:
+		_open_shop()
 
 func _is_mouse_over_ui(mouse_pos: Vector2) -> bool:
 	var left_panel = $LeftPanel

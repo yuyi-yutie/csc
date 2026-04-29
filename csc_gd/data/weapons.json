@@ -1,10 +1,19 @@
 {
-  "glock": {
-	"name": "Glock",
-	"icon_path": "res://assets/glock.png"
-  },
-  "usp": {
-	"name": "USP",
-	"icon_path": "res://assets/usp.png"
-  }
+  "glock": { "name": "Glock", "icon_path": "res://assets/glock.png" },
+  "usp-s": { "name": "USP-S", "icon_path": "res://assets/usp-s.png" },
+  "tec-9": { "name": "Tec-9", "icon_path": "res://assets/tec-9.png" },
+  "fn57": { "name": "Five-SeveN", "icon_path": "res://assets/fn57.png" },
+  "cz75": { "name": "CZ75", "icon_path": "res://assets/cz75.png" },
+  "deagle": { "name": "Deagle", "icon_path": "res://assets/deagle.png" },
+  "mac-10": { "name": "MAC-10", "icon_path": "res://assets/mac-10.png" },
+  "mp9": { "name": "MP9", "icon_path": "res://assets/mp9.png" },
+  "pp-19": { "name": "PP-19", "icon_path": "res://assets/pp-19.png" },
+  "nova": { "name": "Nova", "icon_path": "res://assets/nova.png" },
+  "xm1014": { "name": "XM1014", "icon_path": "res://assets/xm1014.png" },
+  "galil ar": { "name": "Galil AR", "icon_path": "res://assets/galil.png" },
+  "ak47": { "name": "AK-47", "icon_path": "res://assets/ak-47.png" },
+  "m4a1-s": { "name": "M4A1-S", "icon_path": "res://assets/m4a1-s.png" },
+  "m4a4": { "name": "M4A4", "icon_path": "res://assets/m4a4.png" },
+  "ssg08": { "name": "SSG 08", "icon_path": "res://assets/ssg08.png" },
+  "awp": { "name": "AWP", "icon_path": "res://assets/awp.png" }
 }

@@ -24,6 +24,7 @@ var _glow_style: StyleBoxFlat
 var _is_hovered: bool = false
 var _is_selected: bool = false
 var is_dead: bool = false
+var is_shop_highlighted: bool = false
 
 static var _weapons_data: Dictionary = {}
 
@@ -50,7 +51,7 @@ func _ready() -> void:
 		weapon_id = "glock"
 	elif team == "blue":
 		base_color = Color(0.2, 0.6, 1.0, 1.0)
-		weapon_id = "usp"
+		weapon_id = "usp-s"
 		
 	if _weapons_data.has(weapon_id):
 		var w_data = _weapons_data[weapon_id]
@@ -153,12 +154,17 @@ func set_selected(active: bool) -> void:
 	_is_selected = active
 	_update_glow_state()
 
+func set_shop_highlight(active: bool) -> void:
+	if is_dead: return
+	is_shop_highlighted = active
+	_update_glow_state()
+
 func _update_glow_state() -> void:
 	if is_dead and _normal_style:
 		add_theme_stylebox_override("panel", _normal_style)
 		return
 		
-	if (_is_hovered or _is_selected) and _glow_style:
+	if (_is_hovered or _is_selected or is_shop_highlighted) and _glow_style:
 		add_theme_stylebox_override("panel", _glow_style)
 	elif _normal_style:
 		add_theme_stylebox_override("panel", _normal_style)
