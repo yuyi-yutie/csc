@@ -22,12 +22,15 @@ var name_str: String = "":
 
 var hp: int = 100
 var max_hp: int = 100
-
+var money: int = 800
 var max_ep: int = 5
 var shoot: int = 50
 var react: int = 50
+var weapon_id: String = ""
 signal hp_changed(new_hp: int, max_hp: int)
 signal stats_changed(piece: ChessPiece)
+signal weapon_changed(w_id: String)
+signal money_changed(new_money: int)
 
 var _normal_style: StyleBoxFlat
 var _glow_style: StyleBoxFlat
@@ -89,6 +92,13 @@ func _on_gui_input(event: InputEvent) -> void:
 
 func _apply_visual_state() -> void:
 	_update_glow_state()
+
+func equip_weapon(w_id: String, cost: int) -> void:
+	if money >= cost:
+		money -= cost
+		weapon_id = w_id
+		money_changed.emit(money)
+		weapon_changed.emit(w_id)
 
 signal piece_died(piece: ChessPiece)
 

@@ -1,4 +1,5 @@
-res://scripts/card_ui.gd
 res://scripts/gameplay_interface.gd
 res://scenes/gameplay_interface.tscn
 res://data/weapons.json
+res://scripts/chess_piece.gd
+res://scripts/card_ui.gd

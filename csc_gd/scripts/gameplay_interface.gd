@@ -135,7 +135,7 @@ func _ready() -> void:
 		
 		if i < 3:
 			for j in range(4):
-				var btn = Button.new()
+				var btn = preload("res://scripts/shop_weapon_button.gd").new()
 				btn.text = "..."
 				btn.custom_minimum_size = Vector2(0, 40)
 				btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -185,9 +185,20 @@ func _ready() -> void:
 				btn.custom_minimum_size = Vector2(0, 30)
 				col_vbox.add_child(btn)
 				
-			var spacer = Control.new()
-			spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-			col_vbox.add_child(spacer)
+			var extra_hbox = HBoxContainer.new()
+			extra_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			extra_hbox.add_theme_constant_override("separation", 12)
+			col_vbox.add_child(extra_hbox)
+			
+			var large_btn1 = Button.new()
+			large_btn1.text = "头盔"
+			large_btn1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			extra_hbox.add_child(large_btn1)
+			
+			var large_btn2 = Button.new()
+			large_btn2.text = "护甲"
+			large_btn2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			extra_hbox.add_child(large_btn2)
 			
 			var close_btn = Button.new()
 			close_btn.text = "关闭商店"
@@ -309,20 +320,46 @@ func _open_shop() -> void:
 			var name_lbl = btn.get_node_or_null("NameLabel")
 			var price_lbl = btn.get_node_or_null("PriceLabel")
 			
-			btn.text = ""
+			# 清理上一次的点击逻辑绑定
+			if btn.pressed.is_connected(_on_buy_weapon):
+				var conns = btn.pressed.get_connections()
+				for c in conns:
+					btn.pressed.disconnect(c.callable)
 			
+			btn.text = ""
+			btn.w_key = ""
+			btn.price = 0
+			
+			var wp_money = 800
 			if _weapons_data.has(w_key):
 				var w_data = _weapons_data[w_key]
 				if name_lbl: name_lbl.text = w_data.get("name", "")
-				if price_lbl: price_lbl.text = "$ 800"
 				
+				wp_money = int(w_data.get("money", 800))
+				btn.w_key = w_key
+				btn.price = wp_money
+				if price_lbl: 
+					price_lbl.text = "$ " + str(wp_money)
+					
 				var icon_path = w_data.get("icon_path", "")
 				if icon_path != "" and icon_rect != null:
 					icon_rect.texture = load(icon_path)
 			else:
 				if name_lbl: name_lbl.text = w_key
 				if price_lbl: price_lbl.text = "$ 800"
-				if icon_rect != null: icon_rect.texture = null
+				if icon_rect != null: 
+					icon_rect.texture = null
+					
+			var can_afford = _selected_piece.money >= wp_money
+			btn.disabled = not can_afford
+			if icon_rect != null:
+				if not can_afford:
+					icon_rect.modulate = Color(1.0, 1.0, 1.0, 0.3)
+				else:
+					icon_rect.modulate = Color(1.0, 1.0, 1.0, 1.0)
+					
+			# 绑定重新购买的逻辑
+			btn.pressed.connect(_on_buy_weapon.bind(w_key, wp_money))
 	
 	if team == "yellow":
 		$LeftPanel.z_index = 101
@@ -343,6 +380,16 @@ func _close_shop() -> void:
 		card.set_shop_highlight(false)
 	for card in blue_cards:
 		card.set_shop_highlight(false)
+
+func _on_buy_weapon(w_key: String, price: int) -> void:
+	if _selected_piece == null: return
+	if _selected_piece.weapon_id == w_key:
+		print("Shop: 已拥有该武器 ", w_key)
+		return
+	if _selected_piece.money >= price:
+		print("Shop: 购买了 ", w_key, " 花费 ", price)
+		_selected_piece.equip_weapon(w_key, price)
+		_open_shop() # 原地刷新商店面板显示
 
 func _show_empty_menu() -> void:
 	if _is_executing_actions: return
@@ -408,37 +455,41 @@ func _bind_interactions() -> void:
 		if json.parse(file.get_as_text()) == OK:
 			pieces_data = json.data
 
-	var yellow_data = pieces_data.get("yellow", [])
-	for i in range(min(yellow_pieces.size(), yellow_cards.size())):
-		var piece = yellow_pieces[i]
-		var card = yellow_cards[i]
-		
-		if i < yellow_data.size():
-			var data = yellow_data[i]
-			piece.name_str = data.get("name", "Name")
-			piece.max_hp = data.get("max_hp", 100)
-			piece.hp = piece.max_hp
-			piece.max_ep = data.get("max_ep", 5)
-			piece.shoot = data.get("shoot", 50)
-			piece.react = data.get("react", 50)
+		var yellow_data = pieces_data.get("yellow", [])
+		for i in range(min(yellow_pieces.size(), yellow_cards.size())):
+			var piece = yellow_pieces[i]
+			var card = yellow_cards[i]
 			
-		_connect_pair(piece, card)
+			piece.weapon_id = "glock"
+			
+			if i < yellow_data.size():
+				var data = yellow_data[i]
+				piece.name_str = data.get("name", "Name")
+				piece.max_hp = data.get("max_hp", 100)
+				piece.hp = piece.max_hp
+				piece.max_ep = data.get("max_ep", 5)
+				piece.shoot = data.get("shoot", 50)
+				piece.react = data.get("react", 50)
+				
+			_connect_pair(piece, card)
 
-	var blue_data = pieces_data.get("blue", [])
-	for i in range(min(blue_pieces.size(), blue_cards.size())):
-		var piece = blue_pieces[i]
-		var card = blue_cards[i]
-		
-		if i < blue_data.size():
-			var data = blue_data[i]
-			piece.name_str = data.get("name", "Name")
-			piece.max_hp = data.get("max_hp", 100)
-			piece.hp = piece.max_hp
-			piece.max_ep = data.get("max_ep", 5)
-			piece.shoot = data.get("shoot", 50)
-			piece.react = data.get("react", 50)
+		var blue_data = pieces_data.get("blue", [])
+		for i in range(min(blue_pieces.size(), blue_cards.size())):
+			var piece = blue_pieces[i]
+			var card = blue_cards[i]
 			
-		_connect_pair(piece, card)
+			piece.weapon_id = "usp-s"
+			
+			if i < blue_data.size():
+				var data = blue_data[i]
+				piece.name_str = data.get("name", "Name")
+				piece.max_hp = data.get("max_hp", 100)
+				piece.hp = piece.max_hp
+				piece.max_ep = data.get("max_ep", 5)
+				piece.shoot = data.get("shoot", 50)
+				piece.react = data.get("react", 50)
+				
+			_connect_pair(piece, card)
 
 func _connect_pair(piece: ChessPiece, card: CardUI) -> void:
 	piece.piece_hovered.connect(func(_p): card.set_glow(true))
@@ -450,9 +501,65 @@ func _connect_pair(piece: ChessPiece, card: CardUI) -> void:
 	card.card_clicked.connect(func(_c): _select_pair(piece, card))
 	
 	piece.hp_changed.connect(card.update_hp)
+	piece.money_changed.connect(card.update_money)
+	piece.weapon_changed.connect(card.change_weapon)
 	card.apply_stats(piece)
 	
 	piece.piece_died.connect(func(p): _on_piece_died(p, card))
+	card.weapon_dropped_on.connect(func(c, wk, pr): _on_weapon_dropped(c, wk, pr))
+	card.weapon_swapped_with.connect(func(sc, tc): _on_weapon_swapped(sc, tc))
+
+func _get_piece_by_card(card: CardUI) -> ChessPiece:
+	if yellow_cards.has(card):
+		var idx = yellow_cards.find(card)
+		if idx < yellow_pieces.size(): return yellow_pieces[idx]
+	elif blue_cards.has(card):
+		var idx = blue_cards.find(card)
+		if idx < blue_pieces.size(): return blue_pieces[idx]
+	return null
+
+func _on_weapon_swapped(source_card: CardUI, target_card: CardUI) -> void:
+	if current_action != 1 or _is_executing_actions:
+		print("Swap: 只能在每回合第一次行动规划阶段互换武器！")
+		return
+		
+	var source_piece = _get_piece_by_card(source_card)
+	var target_piece = _get_piece_by_card(target_card)
+	
+	if source_piece == null or target_piece == null: return
+	if source_piece.team != target_piece.team: return
+	
+	print("Swap: ", source_piece.name_str, " 和 ", target_piece.name_str, " 互换了武器")
+	
+	var temp = source_piece.weapon_id
+	source_piece.weapon_id = target_piece.weapon_id
+	target_piece.weapon_id = temp
+	
+	source_piece.weapon_changed.emit(source_piece.weapon_id)
+	target_piece.weapon_changed.emit(target_piece.weapon_id)
+
+func _on_weapon_dropped(card: CardUI, w_key: String, price: int) -> void:
+	if _selected_piece == null: return
+	if _selected_piece.team != card.team: return # 只能给同阵营购买
+	if _selected_piece.money >= price:
+		var target_piece: ChessPiece = null
+		if yellow_cards.has(card):
+			var idx = yellow_cards.find(card)
+			if idx < yellow_pieces.size(): target_piece = yellow_pieces[idx]
+		elif blue_cards.has(card):
+			var idx = blue_cards.find(card)
+			if idx < blue_pieces.size(): target_piece = blue_pieces[idx]
+			
+		if target_piece != null and is_instance_valid(target_piece) and target_piece.hp > 0:
+			if target_piece.weapon_id == w_key:
+				print("Shop: 队友已拥有该武器 ", w_key)
+				return
+				
+			print("Shop: 帮队友购买了 ", w_key, " 花费 ", price)
+			_selected_piece.money -= price
+			_selected_piece.money_changed.emit(_selected_piece.money)
+			target_piece.equip_weapon(w_key, 0) # 队友不消耗钱
+			_open_shop() # 刷新当前商店面板以便更新剩余资金和可点击状态
 
 func _on_piece_died(piece: ChessPiece, card: CardUI) -> void:
 	if yellow_pieces.has(piece):

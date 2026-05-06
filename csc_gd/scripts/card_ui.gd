@@ -99,6 +99,8 @@ func _setup_glow_styles() -> void:
 		
 		add_theme_stylebox_override("panel", _normal_style)
 
+@onready var money_label: Label = $MarginContainer/VBoxContainer/Header/MoneyLabel
+
 func apply_stats(piece: ChessPiece) -> void:
 	name_label.text = piece.name_str
 	character_name = piece.name_str
@@ -106,6 +108,8 @@ func apply_stats(piece: ChessPiece) -> void:
 	react_label.text = str(piece.react)
 	
 	update_hp(piece.hp, piece.max_hp)
+	update_money(piece.money)
+	change_weapon(piece.weapon_id)
 	
 	# Rebuild EP boxes
 	for child in ep_boxes.get_children():
@@ -120,12 +124,69 @@ func apply_stats(piece: ChessPiece) -> void:
 		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ep_boxes.add_child(box)
 
+func update_money(new_money: int) -> void:
+	if money_label:
+		money_label.text = "$ %d" % new_money
+
+func change_weapon(w_id: String) -> void:
+	if _weapons_data.has(w_id):
+		var w_data = _weapons_data[w_id]
+		weapon_name.text = w_data.get("name", "")
+		var icon_path = w_data.get("icon_path", "")
+		if icon_path != "":
+			weapon_icon.texture = load(icon_path)
+		else:
+			weapon_icon.texture = null
+	else:
+		weapon_name.text = ""
+		weapon_icon.texture = null
+
 func update_hp(hp: int, max_hp: int) -> void:
 	if hp_bar:
 		hp_bar.max_value = max_hp
 		hp_bar.value = hp
 	if hp_label:
 		hp_label.text = str(hp)
+
+signal weapon_dropped_on(card: CardUI, w_id: String, price: int)
+signal weapon_swapped_with(source_card: CardUI, target_card: CardUI)
+
+func _get_drag_data(at_position: Vector2) -> Variant:
+	if is_dead or weapon_name.text == "": 
+		return null
+		
+	var preview = TextureRect.new()
+	if weapon_icon.texture:
+		preview.texture = weapon_icon.texture
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.custom_minimum_size = Vector2(80, 40)
+	
+	var c = Control.new()
+	c.add_child(preview)
+	preview.position = -preview.custom_minimum_size / 2.0
+	
+	set_drag_preview(c)
+	return {"type": "swap_weapon", "source_card": self}
+
+func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	if is_dead: return false
+	if typeof(data) == TYPE_DICTIONARY and data.has("type"):
+		if data["type"] == "weapon":
+			return true
+		if data["type"] == "swap_weapon":
+			var src = data["source_card"] as CardUI
+			if src != self and src.team == self.team:
+				return true
+	return false
+
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	if is_dead: return
+	if typeof(data) == TYPE_DICTIONARY:
+		if data["type"] == "weapon":
+			weapon_dropped_on.emit(self, data["w_key"], data["price"])
+		elif data["type"] == "swap_weapon":
+			weapon_swapped_with.emit(data["source_card"], self)
 
 func mark_dead() -> void:
 	is_dead = true
@@ -137,6 +198,7 @@ func mark_dead() -> void:
 		
 	weapon_icon.texture = null
 	weapon_name.text = ""
+	update_money(0)
 	
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mouse_default_cursor_shape = Control.CURSOR_ARROW
